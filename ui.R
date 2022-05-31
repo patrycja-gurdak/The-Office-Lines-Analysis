@@ -2,6 +2,7 @@ library("shiny")
 library("shinythemes")
 library("ggplot2")
 
+
 reg_cast = c("Michael", "Pam", "Dwight", "Jim", "Ryan", "Stanley", "Kevin", "Meredith", "Angela", "Oscar",
              "Phyllis", "Roy", "Toby", "Jan", "Kelly", "Andy", "Creed", "Darryl", "Erin", "Gabe", "Holly",
              "Robert", "Nellie", "Clark", "Pete")
@@ -26,30 +27,38 @@ ui = fluidPage(theme = shinytheme("sandstone"),
                           sidebarPanel(selectInput("select_char", label = h3("Select character"), 
                                                    choices = reg_cast, 
                                                    selected = 1),
-                                       br(),
+                                      
                                        h2(textOutput("name")),
                                        imageOutput("image", height = "200px"),
                                        br(),
                                        p("First occurence: ", textOutput("first_ep", inline=T)),
                                        p("Last occurence: ", textOutput("last_ep", inline=T)),
-                                       p("Total number of lines: ", textOutput("total_lines", inline=T))
+                                       p("Total number of lines: ", textOutput("total_lines", inline=T)),
+                                       textOutput("text_more_lines")
                                        ),
+                                  
                           
-                          mainPanel(h2(textOutput("title_word_cloud")),
-                                    plotOutput("cloud")
-                                    
+                          mainPanel(
+                              h3(textOutput("title_word_cloud")),
+                              fluidRow(
+                                column(7, plotOutput("cloud",width = "100%",height="600px"))
+                              )
                             )
                           )
                         ),
 
 
               tabPanel("Line Searcher",
+                       sidebarPanel(
+                         textInput("phrase",
+                                   label = h3("Write phrase/line you want to search for:"),
+                                   value = "Enter text...",
+                                   ),
+                       ),        
                        mainPanel(
-                        textInput("line_search",
-                                  label = h3("Write phrase/line you want to search for:"),
-                                  value = "Enter text...",
-                                  width = "50%")
-                )
+          
+                        dataTableOutput("search_line")
+                      )
               )
   )
 )
