@@ -1,11 +1,11 @@
 require("ggplot2")
 require(stringr)
-require(wordcloud2)
+require(wordcloud)
 require(RColorBrewer)
 require("SnowballC")
 require(tm)
 
-df = read.csv("C:/code/Datasets/TheOfficeLines/the-office_lines.csv", encoding="UTF-8")
+df = read.csv("the_office_lines.csv", encoding="UTF-8")
 reg_cast = c("Michael", "Pam", "Dwight", "Jim", "Ryan", "Stanley", "Kevin", "Meredith", "Angela", "Oscar",
              "Phyllis", "Roy", "Toby", "Jan", "Kelly", "Andy", "Creed", "Darryl", "Erin", "Gabe", "Holly",
              "Robert", "Nellie", "Clark", "Pete")
@@ -37,11 +37,15 @@ last_episode <- function(char){
   return(last)
 }
 
+lines_number = get_data()
+
 server = function(input, output, session) {
   
   season <- reactive({
     input$season_slider
   })
+  
+  
   
   output$season_plot <- renderPlot({
     
@@ -68,8 +72,16 @@ server = function(input, output, session) {
   
   output$total_lines <- renderPrint({
     char = input$select_char
-    data = get_data()
-    cat(subset(data, name == char)$number)})
+    cat(subset(lines_number, name == char)$number)})
+  
+  output$text_more_lines <- renderPrint({
+    char = input$select_char
+    index = which(lines_number$name == char)
+    more_lines = round(mean(lines_number$number[-index] < lines_number[index,]$number) * 100, 2)
+    
+    cat(paste0("Did you know that ", char, " has more lines than ",
+      more_lines, "% of other main characters in The Office?"))
+  })
   
   output$image <- renderImage({
     char = input$select_char
@@ -86,8 +98,10 @@ server = function(input, output, session) {
     return(paste0("Most common words spoken by ", char))}
   )
   
+  wordcloud_rep <- repeatable(wordcloud)
+  
   output$cloud <- renderPlot({
-    max_words = 30
+    max_words = 100
     char = input$select_char
     data = subset(df, Character == char)$Line
     
@@ -97,10 +111,33 @@ server = function(input, output, session) {
     words <- tm_map(words, removePunctuation)
     words <- tm_map(words, stripWhitespace)
     
-    tdm <- as.matrix(TermDocumentMatrix(words))
-    data <- sort(rowSums(tdm), decreasing = TRUE)[1:max_words]
-    data <- data.frame(word = names(data), freq = as.numeric(data))
-    
-    wordcloud2(data, shape = 'circle', color = 'random-light')
+    wordcloud_rep(words, max.words = max_words, scale=c(5,1),
+              colors=brewer.pal(8, "Dark2"),
+              random.order = FALSE)
+  })
+  
+  #Regex searching with highlights thanks to: 
+  #https://codehunter.cc/a/r/highlight-word-in-dt-in-shiny-based-on-regex
+  
+  df_reactive <- reactive({
+    df %>% 
+      # Filter if input is anywhere, even in other words.
+      filter_at(.vars = vars(Line),
+                any_vars(grepl(input$phrase, ., T, T))) %>% 
+      # Replace complete words with same in HTML.
+      mutate_at(.vars = vars(Line),
+                ~ gsub(
+                paste(c("\\b(", input$phrase, ")\\b"), collapse = ""),
+                "<span style='background-color:yellow;'>\\1</span>",
+                .,
+                TRUE,
+                TRUE
+                )  
+      )
+
+  })
+  
+  output$search_line <- renderDataTable({
+    datatable(df_reactive(), escape = F, options = list(dom = "lt"))
   })
 }
