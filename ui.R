@@ -1,6 +1,7 @@
-library("shiny")
-library("shinythemes")
-library("ggplot2")
+require(shiny)
+require(shinythemes)
+require(ggplot2)
+require(DT)
 
 
 reg_cast = c("Michael", "Pam", "Dwight", "Jim", "Ryan", "Stanley", "Kevin", "Meredith", "Angela", "Oscar",
@@ -52,8 +53,11 @@ ui = fluidPage(theme = shinytheme("sandstone"),
                        sidebarPanel(
                          textInput("phrase",
                                    label = h3("Write phrase/line you want to search for:"),
-                                   value = "Enter text...",
+                                   value = "",
                                    ),
+                         checkboxInput("exact_match", label = "Exact match", value = FALSE),
+                         
+                         p("Phrases found: ", textOutput("phrase_number", inline=T))
                        ),        
                        mainPanel(
           

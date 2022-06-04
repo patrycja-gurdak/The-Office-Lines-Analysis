@@ -1,20 +1,19 @@
-require("ggplot2")
+require(ggplot2)
+require(dplyr)
 require(stringr)
 require(wordcloud)
 require(RColorBrewer)
-require("SnowballC")
 require(tm)
+require(DT)
 
-df = read.csv("the_office_lines.csv", encoding="UTF-8")
+df = read.csv("C:/code/The-Office-Lines-Analysis/lines_prepared.csv", encoding="UTF-8")
 reg_cast = c("Michael", "Pam", "Dwight", "Jim", "Ryan", "Stanley", "Kevin", "Meredith", "Angela", "Oscar",
              "Phyllis", "Roy", "Toby", "Jan", "Kelly", "Andy", "Creed", "Darryl", "Erin", "Gabe", "Holly",
              "Robert", "Nellie", "Clark", "Pete")
 
-df$Line <- str_replace_all(df$Line, "’", "'")
-
 count_lines <- function(char, season){
   uniques = unique(df$Character[startsWith(df$Character, substr(char, 1, 3))])
-  uniques = uniques[!startsWith(uniques, paste(char, "’S", sep=""))]
+  uniques = uniques[!startsWith(uniques, paste(char, "'S", sep=""))]
   count = sum(str_count(subset(df, Season %in% season)$Character, pattern = paste(uniques, collapse='|')))
   return(count)
 }
@@ -108,7 +107,7 @@ server = function(input, output, session) {
     words <- Corpus(VectorSource(data))
     
     words <- tm_map(words, removeWords, stopwords("english"))
-    words <- tm_map(words, removePunctuation)
+    words <- tm_map(words, removePunctuation, ucp = TRUE)
     words <- tm_map(words, stripWhitespace)
     
     wordcloud_rep(words, max.words = max_words, scale=c(5,1),
@@ -120,24 +119,61 @@ server = function(input, output, session) {
   #https://codehunter.cc/a/r/highlight-word-in-dt-in-shiny-based-on-regex
   
   df_reactive <- reactive({
-    df %>% 
-      # Filter if input is anywhere, even in other words.
-      filter_at(.vars = vars(Line),
-                any_vars(grepl(input$phrase, ., T, T))) %>% 
-      # Replace complete words with same in HTML.
-      mutate_at(.vars = vars(Line),
-                ~ gsub(
-                paste(c("\\b(", input$phrase, ")\\b"), collapse = ""),
-                "<span style='background-color:yellow;'>\\1</span>",
-                .,
-                TRUE,
-                TRUE
-                )  
-      )
+    phrase_not_exact = paste(c("(", input$phrase, ")"), collapse = "")
+    phrase_exact = paste(c("\\b(", input$phrase, ")\\b"), collapse = "")
+    
+    if (input$exact_match == TRUE){
+      df %>% 
+        # Filter if input is anywhere, even in other words.
+        filter_at(.vars = vars(Line),
+                  any_vars(grepl(input$phrase, ., ignore.case= T, perl= T))) %>% 
+  
+        # Replace complete words with same in HTML.
+        mutate_at(.vars = vars(Line),
+                  ~ gsub(
+                  phrase_exact,
+                  "<span style='background-color:yellow;'>\\1</span>",
+                  .,
+                  ignore.case = TRUE,
+                  perl = TRUE
+                  )  
+        )
+    }
+    else{
+      df %>% 
+        # Filter if input is anywhere, even in other words.
+        filter_at(.vars = vars(Line),
+                  any_vars(grepl(input$phrase, ., ignore.case= T, perl= T))) %>% 
+        
+        # Replace complete words with same in HTML.
+        mutate_at(.vars = vars(Line),
+                  ~ gsub(
+                    phrase_not_exact,
+                    "<span style='background-color:yellow;'>\\1</span>",
+                    .,
+                    ignore.case = TRUE,
+                    perl = TRUE
+                  )  
+        )
+    }
 
   })
   
   output$search_line <- renderDataTable({
-    datatable(df_reactive(), escape = F, options = list(dom = "lt"))
+    datatable(df_reactive(), escape = F, options = list(dom = '<"top" p>'))
   })
+  
+  output$phrase_number <- renderText(({
+    if (input$phrase == ''){
+      return("-")
+    }else{
+      if (input$exact_match == TRUE){
+        return(sum(str_count(df$Line, regex(paste0("\\b", input$phrase, "\\b"), ignore_case=TRUE))))
+      }
+      else{
+        return(sum(str_count(df$Line, fixed(input$phrase, ignore_case=TRUE))))
+      }
+    }
+    
+  }))
 }
