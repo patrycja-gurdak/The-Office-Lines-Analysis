@@ -10,7 +10,7 @@ library(shinythemes)
 
 
 ###load data
-df = read.csv("C:/code/Datasets/TheOfficeLines/the-office_lines.csv", encoding="UTF-8")
+df = read.csv("the_office_lines.csv", encoding="UTF-8")
 
 df$Line <- str_replace_all(df$Line, "’", "'")
 
