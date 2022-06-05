@@ -1,19 +1,6 @@
-require(shiny)
-require(shinythemes)
-require(ggplot2)
-require(DT)
-
-
-reg_cast = c("Michael", "Pam", "Dwight", "Jim", "Ryan", "Stanley", "Kevin", "Meredith", "Angela", "Oscar",
-             "Phyllis", "Roy", "Toby", "Jan", "Kelly", "Andy", "Creed", "Darryl", "Erin", "Gabe", "Holly",
-             "Robert", "Nellie", "Clark", "Pete")
-
-ui = fluidPage(theme = shinytheme("sandstone"),
+ui = fluidPage(theme = shinytheme("flatly"),
 
               titlePanel(strong("The Office Lines Analysis")),
-
-              # p("Who in the Office is the most talkative character? Following page is analysis of
-              #        all lines spoken in our beloved TV series."),
 
               tabsetPanel(
                 tabPanel("General Info",
@@ -63,10 +50,6 @@ ui = fluidPage(theme = shinytheme("sandstone"),
           
                         dataTableOutput("search_line")
                       )
-              )
-  )
-)
-    
-
-#shinyApp(ui = ui, server = server)
-#runApp("C:/code/The Office Lines")
+                )
+          )
+    )
