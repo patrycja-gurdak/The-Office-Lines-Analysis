@@ -1,16 +1,29 @@
-ui = fluidPage(theme = shinytheme("flatly"),
+ui = navbarPage(theme = shinytheme("flatly"),
 
-              titlePanel(strong("The Office Lines Analysis")),
+              title = strong("The Office Lines Analysis"),
 
-              tabsetPanel(
-                tabPanel("General Info",
-                              sliderInput(inputId = "season_slider", label = "Choose season",
-                                          value = 1, min = 1, max = 9),
-                              h1("Here we see a plot: "),
-                              plotOutput("season_plot")
-                         ),
+              tabPanel("General Info",
+                       fluidPage(
+                         sidebarLayout(
+                           sidebarPanel(
+                           ),
+                           
+                           mainPanel(
+                             selectInput(inputId = "plot_chars", label = "Choose characters",
+                                         choices = c("All characters", reg_cast),
+                                         selected = "All characters",
+                                         multiple = TRUE,
+                                         selectize = TRUE,
+                                         width = "50%"
+                             ),
+                            plotOutput("season_plot")
+                           )
+                         )
+                       )
+                      ),
 
-                tabPanel("Character Stats", fluid = TRUE,
+              tabPanel("Character Stats",
+                       fluidPage(
                         sidebarLayout(
                           sidebarPanel(selectInput("select_char", label = h3("Select character"), 
                                                    choices = reg_cast, 
@@ -27,16 +40,24 @@ ui = fluidPage(theme = shinytheme("flatly"),
                                   
                           
                           mainPanel(
-                              h3(textOutput("title_word_cloud")),
-                              fluidRow(
-                                column(7, plotOutput("cloud",width = "100%",height="600px"))
+                            tabsetPanel(
+                              tabPanel("Word Cloud",
+                                h4(textOutput("title_word_cloud")),
+                                wordcloud2Output("cloud")
+                                
+                              ),
+                              tabPanel("Plots",
+                                       h3("plots")
+                                       
                               )
                             )
                           )
-                        ),
+                        )
+                       )
+                      ),
 
 
-              tabPanel("Line Searcher",
+            tabPanel("Line Searcher",
                        sidebarPanel(
                          textInput("phrase",
                                    label = h3("Write phrase/line you want to search for:"),
@@ -52,4 +73,3 @@ ui = fluidPage(theme = shinytheme("flatly"),
                       )
                 )
           )
-    )
